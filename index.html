@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Prince's Quest for Love</title>
+    <style>
+        body {
+            background-color: #1c2526;
+            color: #e6d5b8;
+            font-family: 'Georgia', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        #game-container {
+            background-color: #2e3b3e;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            text-align: center;
+            max-width: 700px;
+            width: 90%;
+        }
+        h1 {
+            color: #ffd700;
+            text-shadow: 0 0 10px #ffa500;
+            font-size: 2.5em;
+        }
+        button {
+            background-color: #8b0000;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            margin: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #a52a2a;
+        }
+        #story-text {
+            margin: 20px 0;
+            line-height: 1.8;
+            font-size: 1.2em;
+        }
+        #options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        #game-canvas {
+            display: none;
+            margin: 20px auto;
+            border: 3px solid #ffd700;
+            background-color: #1c2526;
+        }
+        #flag-message {
+            display: none;
+            font-size: 24px;
+            color: #ffd700;
+            text-shadow: 0 0 10px #ffa500;
+            margin-top: 20px;
+        }
+        a {
+            color: #ff69b4;
+            text-decoration: underline;
+        }
+        audio {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>The Prince's Quest for Love</h1>
+        <div id="story-text"></div>
+        <canvas id="game-canvas" width="500" height="400"></canvas>
+        <div id="options"></div>
+        <div id="flag-message">if you want the flag go here <a href="https://codeshare.io/yashaura" target="_blank">https://codeshare.io/yashaura</a></div>
+        <audio id="bgm" loop>
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+
+    <script>
+        const storyText = document.getElementById('story-text');
+        const optionsDiv = document.getElementById('options');
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const flagMessageDiv = document.getElementById('flag-message');
+        const bgm = document.getElementById('bgm');
+
+        let state = 'start';
+        let gameState = null;
+
+        function displayText(text) {
+            storyText.innerHTML = text;
+        }
+
+        function clearOptions() {
+            optionsDiv.innerHTML = '';
+        }
+
+        function addButton(text, nextState, action) {
+            const button = document.createElement('button');
+            button.innerText = text;
+            button.onclick = () => {
+                if (action) action();
+                state = nextState;
+                updateGame();
+            };
+            optionsDiv.appendChild(button);
+        }
+
+        function hideCanvas() {
+            canvas.style.display = 'none';
+        }
+
+        function showCanvas() {
+            canvas.style.display = 'block';
+        }
+
+        // Challenge 1: Enchanted Forest Maze
+        let maze = [
+            [1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 1],
+            [1, 0, 1, 0, 1],
+            [1, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1]
+        ];
+        let playerPos = { x: 1, y: 1 };
+        let keyPos = { x: 3, y: 3 };
+        let vines = [{ x: 2, y: 1 }, { x: 1, y: 3 }];
+        let mazeLoop;
+
+        function initMazeGame() {
+            gameState = 'maze';
+            maze = [
+                [1, 1, 1, 1, 1],
+                [1, 0, 0, 0, 1],
+                [1, 0, 1, 0, 1],
+                [1, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1]
+            ];
+            playerPos = { x: 1, y: 1 };
+            keyPos = { x: 3, y: 3 };
+            vines = [{ x: 2, y: 1 }, { x: 1, y: 3 }];
+            drawMaze();
+            mazeLoop = setInterval(updateMaze, 2000);
+            document.addEventListener('keydown', handleMazeKey);
+        }
+
+        function drawMaze() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const cellSize = 80;
+            for (let y = 0; y < 5; y++) {
+                for (let x = 0; x < 5; x++) {
+                    ctx.fillStyle = maze[y][x] === 1 ? '#4b3621' : '#228b22';
+                    ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                }
+            }
+            vines.forEach(vine => {
+                ctx.fillStyle = '#006400';
+                ctx.fillRect(vine.x * cellSize, vine.y * cellSize, cellSize, cellSize);
+            });
+            ctx.font = '40px Arial';
+            ctx.fillStyle = '#ffd700';
+            ctx.fillText('🔑', keyPos.x * cellSize + 20, keyPos.y * cellSize + 60);
+            ctx.fillStyle = '#ff4444';
+            ctx.beginPath();
+            ctx.arc(playerPos.x * cellSize + 40, playerPos.y * cellSize + 40, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.font = '30px Arial';
+            ctx.fillStyle = '#8b4513';
+            ctx.fillText('🐎', playerPos.x * cellSize + 10, playerPos.y * cellSize + 70);
+        }
+
+        function updateMaze() {
+            vines.forEach(vine => {
+                const directions = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+                const move = directions[Math.floor(Math.random() * 4)];
+                const newX = vine.x + move[0];
+                const newY = vine.y + move[1];
+                if (newX > 0 && newX < 4 && newY > 0 && newY < 4 && maze[newY][newX] === 0) {
+                    vine.x = newX;
+                    vine.y = newY;
+                }
+            });
+            drawMaze();
+        }
+
+        function handleMazeKey(e) {
+            if (gameState !== 'maze') return;
+            let newX = playerPos.x;
+            let newY = playerPos.y;
+            if (e.key === 'ArrowUp') newY--;
+            if (e.key === 'ArrowDown') newY++;
+            if (e.key === 'ArrowLeft') newX--;
+            if (e.key === 'ArrowRight') newX++;
+            if (newX >= 0 && newX < 5 && newY >= 0 && newY < 5 && maze[newY][newX] === 0) {
+                if (!vines.some(vine => vine.x === newX && vine.y === newY)) {
+                    playerPos.x = newX;
+                    playerPos.y = newY;
+                    if (playerPos.x === keyPos.x && playerPos.y === keyPos.y) {
+                        clearInterval(mazeLoop);
+                        document.removeEventListener('keydown', handleMazeKey);
+                        state = 'challenge1_success';
+                        updateGame();
+                    }
+                } else {
+                    clearInterval(mazeLoop);
+                    document.removeEventListener('keydown', handleMazeKey);
+                    state = 'challenge1_fail';
+                    updateGame();
+                }
+            }
+            drawMaze();
+        }
+
+        // Challenge 2: Dragon's River Crossing
+        let riverPlayer = { x: 250, y: 350, shields: 0 };
+        let fireballs = [];
+        let tokens = [];
+        let riverLoop;
+        let riverScroll = 0;
+
+        function initRiverGame() {
+            gameState = 'river';
+            riverPlayer = { x: 250, y: 350, shields: 0 };
+            fireballs = [];
+            tokens = [];
+            riverScroll = 0;
+            drawRiver();
+            riverLoop = setInterval(updateRiver, 1000 / 60);
+            document.addEventListener('keydown', handleRiverKey);
+        }
+
+        function drawRiver() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#4682b4';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            for (let y = -50; y < canvas.height; y += 50) {
+                ctx.fillStyle = '#5f9ea0';
+                ctx.fillRect(0, (y + riverScroll) % canvas.height, canvas.width, 25);
+            }
+            ctx.fillStyle = '#ff4444';
+            ctx.beginPath();
+            ctx.arc(riverPlayer.x, riverPlayer.y, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.font = '30px Arial';
+            ctx.fillStyle = '#8b4513';
+            ctx.fillText('🐎', riverPlayer.x - 20, riverPlayer.y + 40);
+            fireballs.forEach(f => {
+                ctx.font = '30px Arial';
+                ctx.fillStyle = '#ff4500';
+                ctx.fillText('🔥', f.x, f.y);
+            });
+            tokens.forEach(t => {
+                ctx.font = '30px Arial';
+                ctx.fillStyle = '#c0c0c0';
+                ctx.fillText('🛡️', t.x, t.y);
+            });
+            ctx.font = '20px Arial';
+            ctx.fillStyle = '#ffd700';
+            ctx.fillText(`Shields: ${riverPlayer.shields}`, 10, 30);
+        }
+
+        function updateRiver() {
+            riverScroll = (riverScroll + 2) % canvas.height;
+            if (Math.random() < 0.05) {
+                fireballs.push({ x: Math.random() * 450, y: 0 });
+            }
+            if (Math.random() < 0.02 && tokens.length < 3) {
+                tokens.push({ x: Math.random() * 450, y: 0 });
+            }
+            fireballs.forEach(f => (f.y += 3));
+            tokens.forEach(t => (t.y += 2));
+            fireballs = fireballs.filter(f => f.y < canvas.height);
+            tokens = tokens.filter(t => t.y < canvas.height);
+            fireballs.forEach(f => {
+                const dx = riverPlayer.x - f.x;
+                const dy = riverPlayer.y - f.y;
+                if (Math.sqrt(dx * dx + dy * dy) < 30) {
+                    if (riverPlayer.shields > 0) {
+                        riverPlayer.shields--;
+                        fireballs = fireballs.filter(fb => fb !== f);
+                    } else {
+                        clearInterval(riverLoop);
+                        document.removeEventListener('keydown', handleRiverKey);
+                        state = 'challenge2_fail';
+                        updateGame();
+                    }
+                }
+            });
+            tokens = tokens.filter(t => {
+                const dx = riverPlayer.x - t.x;
+                const dy = riverPlayer.y - t.y;
+                if (Math.sqrt(dx * dx + dy * dy) < 30) {
+                    riverPlayer.shields++;
+                    return false;
+                }
+                return true;
+            });
+            if (riverPlayer.shields >= 3) {
+                clearInterval(riverLoop);
+                document.removeEventListener('keydown', handleRiverKey);
+                state = 'challenge2_success';
+                updateGame();
+            }
+            drawRiver();
+        }
+
+        function handleRiverKey(e) {
+            if (gameState !== 'river') return;
+            if (e.key === 'ArrowLeft' && riverPlayer.x > 20) riverPlayer.x -= 10;
+            if (e.key === 'ArrowRight' && riverPlayer.x < 480) riverPlayer.x += 10;
+            drawRiver();
+        }
+
+        // Challenge 3: Crystal Bridge Puzzle
+        let bridgeGrid = [];
+        let selectedTile = null;
+        let bridgeTimer = 30;
+        let bridgeLoop;
+
+        function initBridgeGame() {
+            gameState = 'bridge';
+            bridgeGrid = [
+                ['red', 'blue', 'green'],
+                ['green', 'red', 'blue'],
+                ['blue', 'green', 'red']
+            ];
+            selectedTile = null;
+            bridgeTimer = 30;
+            drawBridge();
+            bridgeLoop = setInterval(updateBridge, 1000);
+            canvas.addEventListener('click', handleBridgeClick);
+        }
+
+        function drawBridge() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const cellSize = 100;
+            for (let y = 0; y < 3; y++) {
+                for (let x = 0; x < 3; x++) {
+                    ctx.fillStyle = bridgeGrid[y][x];
+                    ctx.fillRect(x * cellSize + 100, y * cellSize + 50, cellSize, cellSize);
+                    if (selectedTile && selectedTile.x === x && selectedTile.y === y) {
+                        ctx.strokeStyle = '#ffd700';
+                        ctx.lineWidth = 5;
+                        ctx.strokeRect(x * cellSize + 100, y * cellSize + 50, cellSize, cellSize);
+                    }
+                }
+            }
+            ctx.font = '40px Arial';
+            ctx.fillStyle = '#8b4513';
+            ctx.fillText('🐎', 50, 350);
+            ctx.font = '20px Arial';
+            ctx.fillStyle = '#ffd700';
+            ctx.fillText(`Time: ${Math.ceil(bridgeTimer)}s`, 400, 30);
+        }
+
+        function updateBridge() {
+            bridgeTimer--;
+            if (bridgeTimer <= 0) {
+                clearInterval(bridgeLoop);
+                canvas.removeEventListener('click', handleBridgeClick);
+                state = 'challenge3_fail';
+                updateGame();
+            }
+            if (checkBridgeWin()) {
+                clearInterval(bridgeLoop);
+                canvas.removeEventListener('click', handleBridgeClick);
+                state = 'challenge3_success';
+                updateGame();
+            }
+            drawBridge();
+        }
+
+        function checkBridgeWin() {
+            for (let y = 0; y < 3; y++) {
+                if (bridgeGrid[y][0] === bridgeGrid[y][1] && bridgeGrid[y][1] === bridgeGrid[y][2]) return true;
+            }
+            for (let x = 0; x < 3; x++) {
+                if (bridgeGrid[0][x] === bridgeGrid[1][x] && bridgeGrid[1][x] === bridgeGrid[2][x]) return true;
+            }
+            return false;
+        }
+
+        function handleBridgeClick(e) {
+            if (gameState !== 'bridge') return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const gridX = Math.floor((x - 100) / 100);
+            const gridY = Math.floor((y - 50) / 100);
+            if (gridX >= 0 && gridX < 3 && gridY >= 0 && gridY < 3) {
+                if (!selectedTile) {
+                    selectedTile = { x: gridX, y: gridY };
+                } else {
+                    const dx = Math.abs(selectedTile.x - gridX);
+                    const dy = Math.abs(selectedTile.y - gridY);
+                    if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+                        [bridgeGrid[selectedTile.y][selectedTile.x], bridgeGrid[gridY][gridX]] =
+                            [bridgeGrid[gridY][gridX], bridgeGrid[selectedTile.y][selectedTile.x]];
+                        bridgeTimer += 5;
+                        if (checkBridgeWin()) {
+                            clearInterval(bridgeLoop);
+                            canvas.removeEventListener('click', handleBridgeClick);
+                            state = 'challenge3_success';
+                            updateGame();
+                        }
+                    } else {
+                        bridgeTimer -= 2;
+                    }
+                    selectedTile = null;
+                }
+                drawBridge();
+            }
+        }
+
+        function updateGame() {
+            clearOptions();
+            hideCanvas();
+            clearInterval(mazeLoop);
+            clearInterval(riverLoop);
+            clearInterval(bridgeLoop);
+            document.removeEventListener('keydown', handleMazeKey);
+            document.removeEventListener('keydown', handleRiverKey);
+            canvas.removeEventListener('click', handleBridgeClick);
+            switch (state) {
+                case 'start':
+                    displayText('Welcome to The Prince’s Quest for Love! Prince Yashhh, are you ready to brave perilous trials to reach Princess Meera’s enchanted castle?');
+                    addButton('Begin Quest', 'intro', () => bgm.play());
+                    break;
+                case 'intro':
+                    displayText('Choose your noble persona, Prince Yashhh, as you embark on this epic journey!');
+                    addButton('Valiant Knight', 'greeting');
+                    addButton('Clever Strategist', 'greeting');
+                    addButton('Charming Poet', 'greeting');
+                    break;
+                case 'greeting':
+                    displayText('Hello Yashhh, How are you?? Meera sent me a vision of you and your love for grand adventures! Your horse, Starwind, awaits. Will you ride to her castle?');
+                    addButton('Ride Forth!', 'challenge1');
+                    break;
+                case 'challenge1':
+                    showCanvas();
+                    displayText('In the Enchanted Forest, a maze of moving vines blocks your path. Guide Prince Yashhh and Starwind to the magical key using arrow keys, but beware the shifting vines!');
+                    initMazeGame();
+                    break;
+                case 'challenge1_success':
+                    displayText('You seize the magical key, and the vines part! Starwind neighs triumphantly as you ride toward the Dragon’s River.');
+                    addButton('Continue', 'challenge2');
+                    break;
+                case 'challenge1_fail':
+                    displayText('The vines ensnare you! Starwind pulls you free, but you must try again.');
+                    addButton('Try Again', 'challenge1');
+                    break;
+                case 'challenge2':
+                    showCanvas();
+                    displayText('At the Dragon’s River, a fiery beast hurls fireballs. Ride Starwind across (use arrow keys), collect 3 shield tokens to fend off the dragon, and dodge fireballs!');
+                    initRiverGame();
+                    break;
+                case 'challenge2_success':
+                    displayText('With 3 shields, you and Starwind cross the river, the dragon’s flames no match for your courage. The castle is near, but a crumbling bridge lies ahead.');
+                    addButton('Continue', 'challenge3');
+                    break;
+                case 'challenge2_fail':
+                    displayText('A Corbion fireball singes you! Starwind carries you to safety, but you need more shields. Try again!');
+                    addButton('Try Again', 'challenge2');
+                    break;
+                case 'challenge3':
+                    showCanvas();
+                    displayText('The Crystal Bridge is crumbling! Swap tiles (click to select and swap) to match colors in rows or columns before time runs out. Starwind cheers you on!');
+                    initBridgeGame();
+                    break;
+                case 'challenge3_success':
+                    displayText('The bridge glows, restored by your skill. You and Starwind reach Meera’s castle. She appears, smiling. “Yashhh, one final question... Do you love me?”');
+                    addButton('Yes', 'ending');
+                    addButton('Of Course, Yes!', 'ending');
+                    break;
+                case 'challenge3_fail':
+                    displayText('The bridge collapses, but Starwind leaps to safety. You must restore it again!');
+                    addButton('Try Again', 'challenge3');
+                    break;
+                case 'ending':
+                    displayText('Meera’s eyes sparkle, and the castle fills with light. “Your heart is true, Yashhh,” she says, revealing a secret path to glory.');
+                    flagMessageDiv.style.display = 'block';
+                    addButton('Play Again', 'start', () => {
+                        flagMessageDiv.style.display = 'none';
+                        bgm.currentTime = 0;
+                    });
+                    break;
+            }
+        }
+
+        updateGame();
+    </script>
+</body>
+</html>
