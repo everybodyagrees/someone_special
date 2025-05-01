@@ -74,12 +74,30 @@
         audio {
             display: none;
         }
+        #secret-input {
+            padding: 10px;
+            font-size: 1.1em;
+            border-radius: 5px;
+            border: 2px solid #ffd700;
+            background-color: #1c2526;
+            color: #e6d5b8;
+            margin: 10px;
+            width: 80%;
+        }
+        #secret-error {
+            color: #ff4444;
+            font-size: 1em;
+            margin: 10px 0;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div id="game-container">
         <h1>The Prince's Quest for Love</h1>
         <div id="story-text"></div>
+        <input type="text" id="secret-input" placeholder="Enter the secret phrase..." style="display: none;">
+        <div id="secret-error">Incorrect phrase. Try again!</div>
         <canvas id="game-canvas" width="500" height="400"></canvas>
         <div id="options"></div>
         <div id="flag-message">if you want the flag go here <a href="https://codeshare.io/yashaura" target="_blank">https://codeshare.io/yashaura</a></div>
@@ -95,8 +113,10 @@
         const ctx = canvas.getContext('2d');
         const flagMessageDiv = document.getElementById('flag-message');
         const bgm = document.getElementById('bgm');
+        const secretInput = document.getElementById('secret-input');
+        const secretError = document.getElementById('secret-error');
 
-        let state = 'start';
+        let state = 'secret_entry';
         let gameState = null;
 
         function displayText(text) {
@@ -124,6 +144,16 @@
 
         function showCanvas() {
             canvas.style.display = 'block';
+        }
+
+        // Secret phrase validation
+        function computeSecretPhrase() {
+            const parts = ['I', 'was', 'enchanted', 'to', 'meet', 'you'];
+            return parts.join(' ');
+        }
+
+        function validateSecretPhrase(input) {
+            return input.toLowerCase().trim() === computeSecretPhrase().toLowerCase();
         }
 
         // Challenge 1: Enchanted Forest Maze
@@ -433,7 +463,33 @@
             document.removeEventListener('keydown', handleMazeKey);
             document.removeEventListener('keydown', handleRiverKey);
             canvas.removeEventListener('click', handleBridgeClick);
+            secretInput.style.display = 'none';
+            secretError.style.display = 'none';
+
             switch (state) {
+                case 'secret_entry':
+                    displayText('Prince Yashhh, a mystical vision from Princess Meera demands a secret phrase to begin your quest. Whisper the words she sang in your dreams...');
+                    secretInput.style.display = 'block';
+                    secretInput.value = '';
+                    addButton('Submit', 'secret_entry', () => {
+                        if (validateSecretPhrase(secretInput.value)) {
+                            state = 'start';
+                            updateGame();
+                        } else {
+                            secretError.style.display = 'block';
+                        }
+                    });
+                    secretInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            if (validateSecretPhrase(secretInput.value)) {
+                                state = 'start';
+                                updateGame();
+                            } else {
+                                secretError.style.display = 'block';
+                            }
+                        }
+                    });
+                    break;
                 case 'start':
                     displayText('Welcome to The Prince’s Quest for Love! Prince Yashhh, are you ready to brave perilous trials to reach Princess Meera’s enchanted castle?');
                     addButton('Begin Quest', 'intro', () => bgm.play());
@@ -471,7 +527,7 @@
                     addButton('Continue', 'challenge3');
                     break;
                 case 'challenge2_fail':
-                    displayText('A Corbion fireball singes you! Starwind carries you to safety, but you need more shields. Try again!');
+                    displayText('A fireball singes you! Starwind carries you to safety, but you need more shields. Try again!');
                     addButton('Try Again', 'challenge2');
                     break;
                 case 'challenge3':
@@ -491,7 +547,7 @@
                 case 'ending':
                     displayText('Meera’s eyes sparkle, and the castle fills with light. “Your heart is true, Yashhh,” she says, revealing a secret path to glory.');
                     flagMessageDiv.style.display = 'block';
-                    addButton('Play Again', 'start', () => {
+                    addButton('Play Again', 'secret_entry', () => {
                         flagMessageDiv.style.display = 'none';
                         bgm.currentTime = 0;
                     });
